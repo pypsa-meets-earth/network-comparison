@@ -69,6 +69,8 @@ def update_component_name(network, component_name, new_value, old_value):
         #special case where a bus name is changed - requires special treatment
         if component_name == "Bus":
                 for component in network.iterate_components():
+                        if "bus" in list(component.df.keys()):
+                                component.df.get("bus").replace({old_value : new_value},inplace=True)
                         if "bus0" in list(component.df.keys()):
                                 component.df.get("bus0").replace({old_value : new_value},inplace=True)
                         if "bus1" in list(component.df):
@@ -151,49 +153,19 @@ busmap = stable_marriage_instance.solve()
 
 string_busmap = dict()
 for key in busmap.keys():
-        if busmap[key]:
-                value = busmap[key][0]
-                string_busmap[str(key)] = str(value)
-       
-                
-        
-print("original networks")
-print("n1")
-for bus in n1.buses.index:
-        print("bus "+bus)
-for line in n1.lines.index:
-        print("line "+line)
-        print("bus0 "+n1.lines.loc[line,"bus0"])
-        print("bus1 "+n1.lines.loc[line,"bus1"])
-for generator in n1.generators.index:
-        print("generator "+generator)
-        print(n1.generators.loc[generator,"bus"])
-print("n2")
-for bus in n2.buses.index:
-        print("bus "+bus)
-for line in n2.lines.index:
-        print("line "+line)
-        print("bus0 "+n2.lines.loc[line,"bus0"])
-        print("bus1 "+n2.lines.loc[line,"bus1"])
-for generator in n2.generators.index:
-        print("generator "+generator)
-        print(n2.generators.loc[generator,"bus"])
-        
+        value = busmap[key]
+        string_busmap[str(key)] = str(value)
 
-print("merge the networks to create n3")
+print("merging the original networks")
+
 n3 = merge(n2,n1)
-print("network n3")
 for bus in n3.buses.index:
-        print("bus "+bus)
-for line in n3.lines.index:
-        print("line "+line)
-        print("bus0 "+n3.lines.loc[line,"bus0"])
-        print("bus1 "+n3.lines.loc[line,"bus1"])
-
-for generator in n3.generators.index:
-        print("generator "+generator)
-        print(n3.generators.loc[generator,"bus"])
-        
+        b = str(bus)
+        if b not in string_busmap.keys():
+                if bus not in n1.buses.index and bus not in n2.buses.index:
+                string_busmap[b] = b
+       
+     
 
 print("now create the clustering")
 clustering = spatial.get_clustering_from_busmap(n3,string_busmap,with_time=False)
