@@ -1,4 +1,5 @@
 import pypsa
+from pypsa.clustering import spatial
 import math
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
@@ -6,19 +7,11 @@ import pandas as pd
 import warnings
 import geopandas as gpd
 from shapely.errors import ShapelyDeprecationWarning
-from pypsa.clustering.spatial import (
-    aggregategenerators,
-    aggregateoneport,
-    busmap_by_stubs,
-    get_clustering_from_busmap,
-)
 from matching.games import HospitalResident
 from geopy.distance import geodesic
 from shapely import Point
 import operator
-import spatial
-#warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
-#plt.rc("figure", figsize=(10, 8))
+
 
 
 
@@ -29,14 +22,17 @@ def get_preferences(network1, network2, reverse=False):
                 
                 bus1_preferences = dict()
                 for bus2 in network2.buses.index:
-                        if reverse==True:
-                                dist = distance_between_buses(bus2,bus1)
-                        else:
-                                dist = distance_between_buses(bus1,bus2)
-                        #if bus1 and bus2 are further away than threshold value, then they should
-                        #never be merged
-                        bus1_preferences[bus2] = dist      
+                        #if network1.buses.loc[bus1,"country"] == network2.buses.loc[bus2,"country"]:
+                                if reverse==True:
+                                        dist = distance_between_buses(bus2,bus1)
+                                else:
+                                        dist = distance_between_buses(bus1,bus2)
+                                #if bus1 and bus2 are further away than threshold value, then they should
+                                #never be merged
+                                bus1_preferences[bus2] = dist      
                 bus1_preferences = sorted(bus1_preferences, key=lambda x:x[1])
+			
+
                 network1_preferences[bus1] = bus1_preferences
 
         return network1_preferences
@@ -92,6 +88,7 @@ def merge(network, other):
         assert (snapshots_aligned and weightings_aligned), "Error, snapshots or snapshot weightings do not agree, cannot add network with time-varying attributes."
 
         new_network = network
+
         for component in other.iterate_components(other.components.keys() - to_skip):
             # we do not add components whose ID is present in this network
             index_list = list(
@@ -125,20 +122,19 @@ def rename_duplicated_items(network1, network2):
                                 if comp1==comp2:
                                         update_component_name(n1, component.name, comp1+"_n1", comp1)
                                         continue
-                
-n1 = pypsa.Network("/Users/jessicaryan/Documents/GitHub/network-comparison/pypsa-networks/pypsa-eur-networks/elec_s_37.nc")
-n2 = pypsa.Network("/Users/jessicaryan/Documents/GitHub/network-comparison/pypsa-networks/pypsa-earth-networks/elec_s_110_ec.nc")
+
+                                
+n1_filepath = input("filepath of first network: ")
+n2_filepath = input("filepath of second network: ")
+n1 = pypsa.Network(n1_filepath)
+n2 = pypsa.Network(n2_filepath)
+
 print("rename duplicated items")
 rename_duplicated_items(n1, n2)
 
 
 gdf1 = gpd.GeoDataFrame(n1.buses, geometry=gpd.points_from_xy(n1.buses.x, n1.buses.y), crs="EPSG:4326").to_crs("EPSG:3857")
 gdf2 = gpd.GeoDataFrame(n2.buses, geometry=gpd.points_from_xy(n2.buses.x, n2.buses.y), crs="EPSG:4326").to_crs("EPSG:3857")
-
-print("n1 has order "+str(n1.buses.size))
-print("n2 has order "+str(n2.buses.size))
-
-
 
                         
 n1_preferences = get_preferences(n1,n2)
@@ -159,18 +155,22 @@ for key in busmap.keys():
 print("merging the original networks")
 
 n3 = merge(n2,n1)
+n3.buses = n3.buses.drop("country",axis=1)
+n3.buses = n3.buses.drop("carrier",axis=1)
+
+
 for bus in n3.buses.index:
         b = str(bus)
         if b not in string_busmap.keys():
                 if bus not in n1.buses.index and bus not in n2.buses.index:
-                string_busmap[b] = b
-       
+                        string_busmap[b] = b
      
 
 print("now create the clustering")
 clustering = spatial.get_clustering_from_busmap(n3,string_busmap,with_time=False)
 
 n4 = clustering.network
+
 n4.buses.loc[:, ["x", "y"]] = n2.buses.loc[n3.buses.index, ["x", "y"]]
 
-
+print(n4.buses)
