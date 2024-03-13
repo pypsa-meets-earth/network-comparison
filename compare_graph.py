@@ -1,5 +1,6 @@
 import pypsa
 import networkx as nx
+import matplotlib.pyplot as plt
 
 
 def graph_properties(network: pypsa.Network) -> dict:
@@ -33,6 +34,23 @@ def graph_properties(network: pypsa.Network) -> dict:
     return network_properties
 
 
+def plot_network_graph(network: pypsa.Network, seed: int = 1969):
+    """
+    Plots the network graph.
+
+    Parameters: 
+        network: pypsa.Network
+    Returns:
+        None
+    """
+    graph = network.graph()
+    options = {"node_color": "black", "node_size": 50,
+               "linewidths": 0, "width": 0.1}
+    pos = nx.spring_layout(graph, seed=seed)  # Seed for reproducible layout
+    nx.draw(graph, pos, **options)
+    plt.savefig("network_graph.png", dpi=300)
+
+
 if __name__ == "__main__":
 
     network_path = "elec_s_37.nc"
@@ -45,3 +63,6 @@ if __name__ == "__main__":
     print(
         f"degree of connectedness: {network_properties['network_average_degree_connectivity']}")
     print(f"degree of network: {network_properties['network_degree']}")
+
+    # plot network graph
+    plot_network_graph(network)
