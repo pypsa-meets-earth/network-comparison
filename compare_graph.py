@@ -44,7 +44,7 @@ def graph_properties(network: pypsa.Network) -> dict:
     return network_properties
 
 
-def plot_network_graph(network: pypsa.Network, seed: int = 1969) -> None:
+def plot_network_graph(network: pypsa.Network, seed: int = 1969, fl_id: str = "") -> None:
     """
     Plots the network graph.
 
@@ -58,4 +58,4 @@ def plot_network_graph(network: pypsa.Network, seed: int = 1969) -> None:
                "linewidths": 0, "width": 0.1}
     pos = nx.spring_layout(graph, seed=seed)  # Seed for reproducible layout
     nx.draw(graph, pos, **options)
-    plt.savefig("network_graph.png", dpi=300)
+    plt.savefig("network_graph" + fl_id + ".png", dpi=300)     
