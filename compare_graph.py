@@ -117,7 +117,10 @@ def plot_network_graph_el(network: pypsa.Network,
     s_df = add_color_col(df=s_df, col="s_lines", col_map=mycmap_green)      
 
     if color_gen:
-        p_gen = network.generators[["bus", "p_nom"]].groupby(["bus"]).sum() 
+        p_gen = network.generators[["bus", "p_nom"]].groupby(["bus"]).sum()
+        gen_df = network.buses.join(p_gen, how="left")
+        gen_df = add_color_col(df=gen_df, col="p_nom", col_map=mycmap_red)
+        node_color = gen_df.p_nom_color.values 
     else:
         p_load = network.loads_t.p_set.sum(axis=0)
         p_load.name = "node_load"
