@@ -1,6 +1,10 @@
 import pypsa
 import networkx as nx
+import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+import matplotlib.cm as cm
 
 
 def graph_properties(network: pypsa.Network) -> dict:
