@@ -67,6 +67,16 @@ def plot_network_graph(network: pypsa.Network, seed: int = 1969, fl_id: str = ""
 def generate_pallette(orig_cm_map=plt.cm.Reds, custom_name="myreds",
     a0=0.25, a1=0.8, n=10) -> mcolors.LinearSegmentedColormap:
     """
+    Generate a custom palette.
+
+    Args:
+        orig_cm_map: pypsa.Network
+        custom_name: str
+        a0: float
+        a1: float
+        n: int
+    Returns:
+        Custom palette    
     """ 
     mycolors = orig_cm_map(np.linspace(a0, a1, n))  
     mycmap = mcolors.LinearSegmentedColormap.from_list("mycmap", mycolors)
@@ -75,6 +85,15 @@ def generate_pallette(orig_cm_map=plt.cm.Reds, custom_name="myreds",
 def add_color_col(df: pd.DataFrame, col: str, 
     col_map: mcolors.LinearSegmentedColormap) -> pd.DataFrame:
     """
+    Add a column with data-to-color mapping.
+
+    Args:
+        df: pandas.DataFrame
+        col: str
+            A data column name.
+    Returns:
+        df: pandas.DataFrame
+            Now with an added color column which name has `_color` suffix   
     """
     s_norm = mcolors.Normalize(
         vmin=df[col].dropna().min(),
