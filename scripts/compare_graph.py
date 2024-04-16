@@ -28,8 +28,8 @@ def graph_properties(network: pypsa.Network) -> dict:
     network_average_degree_connectivity = nx.average_degree_connectivity(graph)
 
     # Extract a list of edges and nodes from the NetworkX graph
-    network_edges = list(graph.edges())
-    network_nodes = list(graph.nodes())
+    network_edges = graph.edges
+    network_nodes = graph.nodes
 
     # Get the total number of edges and nodes in the network
     network_number_of_edges = graph.number_of_edges()
@@ -64,8 +64,8 @@ def plot_network_graph(network: pypsa.Network, seed: int = 1969, fl_id: str = ""
     nx.draw(graph, pos, **options)
     plt.savefig("network_graph" + fl_id + ".png", dpi=300)
 
-def generate_pallette(orig_cm_map=plt.cm.Reds, custom_name="myreds",
-    a0=0.25, a1=0.8, n=10) -> mcolors.LinearSegmentedColormap:
+
+def generate_pallette(orig_cm_map=cm.Reds, a0=0.25, a1=0.8, n=10) -> mcolors.LinearSegmentedColormap:
     """
     Generate a custom palette.
 
@@ -77,13 +77,14 @@ def generate_pallette(orig_cm_map=plt.cm.Reds, custom_name="myreds",
         n: int
     Returns:
         Custom palette    
-    """ 
-    mycolors = orig_cm_map(np.linspace(a0, a1, n))  
+    """
+    mycolors = orig_cm_map(np.linspace(a0, a1, n))
     mycmap = mcolors.LinearSegmentedColormap.from_list("mycmap", mycolors)
     return mycmap
 
-def add_color_col(df: pd.DataFrame, col: str, 
-    col_map: mcolors.LinearSegmentedColormap) -> pd.DataFrame:
+
+def add_color_col(df: pd.DataFrame, col: str,
+                  col_map: mcolors.LinearSegmentedColormap) -> pd.DataFrame:
     """
     Add a column with data-to-color mapping.
 
@@ -107,8 +108,9 @@ def add_color_col(df: pd.DataFrame, col: str,
     )
     return df
 
+
 def plot_network_graph_el(network: pypsa.Network,
-    seed: int = 1969, fl_id: str = "", color_gen=False) -> None:
+                          seed: int = 1969, fl_id: str = "", color_gen=False) -> None:
     """
     Plots the network graph.
 
@@ -122,24 +124,22 @@ def plot_network_graph_el(network: pypsa.Network,
     # custom pallettes are used to avoid bland colors 
     mycmap_red = generate_pallette(
         orig_cm_map=plt.cm.Reds,
-        custom_name="mycmap_red",
         a0=0.45, a1=0.95, n=10
     )
     mycmap_green = generate_pallette(
         orig_cm_map=plt.cm.Greens,
-        custom_name="mycmap_green",
         a0=0.5, a1=0.9, n=10
     )
 
     s_df = network.lines[["s_nom", "length", "num_parallel"]]
-    s_df["s_lines"] = network.lines.eval("s_nom * length * num_parallel")    
-    s_df = add_color_col(df=s_df, col="s_lines", col_map=mycmap_green)      
+    s_df["s_lines"] = network.lines.eval("s_nom * length * num_parallel")
+    s_df = add_color_col(df=s_df, col="s_lines", col_map=mycmap_green)
 
     if color_gen:
         p_gen = network.generators[["bus", "p_nom"]].groupby(["bus"]).sum()
         gen_df = network.buses.join(p_gen, how="left")
         gen_df = add_color_col(df=gen_df, col="p_nom", col_map=mycmap_red)
-        node_color = gen_df.p_nom_color.values 
+        node_color = gen_df.p_nom_color.values
     else:
         p_load = network.loads_t.p_set.sum(axis=0)
         p_load.name = "node_load"
@@ -151,9 +151,9 @@ def plot_network_graph_el(network: pypsa.Network,
         "node_color": node_color,
         "node_size": 20,
         "linewidths": 0.1,
-        "edge_color": s_df.s_lines_color.values,      
+        "edge_color": s_df.s_lines_color.values,
         "width": 2
     }
     pos = nx.spring_layout(graph, seed=seed)
     nx.draw(graph, pos, **options)
-    plt.savefig("network_graph_el" + fl_id + ".png", dpi=300)    
+    plt.savefig("network_graph_el" + fl_id + ".png", dpi=300)
