@@ -1,19 +1,9 @@
-import pypsa
-from pypsa.clustering import spatial
-import math
-import cartopy.crs as ccrs
-import matplotlib.pyplot as plt
-import pandas as pd
-import warnings
+from venv import logger
+
 import geopandas as gpd
-from shapely.errors import ShapelyDeprecationWarning
+import pypsa
 from matching.games import HospitalResident
-from geopy.distance import geodesic
-from shapely import Point
-import operator
-
-
-
+from pypsa.clustering import spatial
 
 #construct preferences
 def get_preferences(network1, network2, reverse=False):

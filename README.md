@@ -13,7 +13,7 @@ To use the package, please clone the repository:
 
 Then, install the conda environment:
 ```bash
-    conda env create -f environment.yml
+    conda env create -f environment.yaml
     conda activate network-comparison
 ```
 

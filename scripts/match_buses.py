@@ -1,5 +1,5 @@
-import matching.games.hospital_resident
 import geopandas as gpd
+import matching.games.hospital_resident
 
 
 def get_busmap(network1, network2):

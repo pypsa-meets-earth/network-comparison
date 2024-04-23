@@ -1,6 +1,8 @@
 import pypsa
 
 import merge_networks
+
+
 def compare_networks():
     n1_filepath = input("filepath of first network: ")
     n2_filepath = input("filepath of second network: ")

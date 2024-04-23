@@ -77,7 +77,6 @@ dependencies:
 
 # Default solver for tests (required for CI)
 - glpk
-- ipopt<3.13.3
 - gurobi
 
 # network-comparison specific packages
@@ -86,6 +85,7 @@ dependencies:
 - geopy
 
 - pip:
+  - jupyter
   - git+https://github.com/davide-f/google-drive-downloader@master  # google drive with fix for virus scan
   - git+https://github.com/FRESNA/vresutils@master  # until new pip release > 0.3.1 (strictly)
   - tsam>=1.1.0
