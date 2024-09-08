@@ -8,11 +8,7 @@ from pypsa.clustering.spatial import get_clustering_from_busmap
 import numpy as np
 import experiments
 
-path_network_1 = "/Users/jessicaryan/Documents/GitHub/network-comparison/scripts/data/pypsa-eur/networks/elec.nc"
-path_network_2 = "/Users/jessicaryan/Documents/GitHub/network-comparison/scripts/data/pypsa-earth/networks/elec_s_110.nc"
 
-n1 = pypsa.Network(path_network_1)
-n2 = pypsa.Network(path_network_2)
 
 # use_drive enables to download default data from gdrive
 # When use_drive is true and the path of the file is not found,
@@ -20,10 +16,8 @@ n2 = pypsa.Network(path_network_2)
 # then the file is downloaded from gdrive
 use_gdrive = True  
 
-
-
-gadm_shape = "/Users/jessicaryan/Documents/GitHub/network-comparison/scripts/data/pypsa-earth/resources/shapes/gadm_shapes.geojson"
-country_shape = "/Users/jessicaryan/Documents/GitHub/network-comparison/scripts/data/pypsa-earth/resources/shapes/country_shapes.geojson"
+gadm_shape = "data/pypsa-earth/resources/shapes/gadm_shapes.geojson"
+country_shape = "data/pypsa-earth/resources/shapes/country_shapes.geojson"
 
 comparison_methodology = {
     "method": "shape",
@@ -33,6 +27,8 @@ comparison_methodology = {
 }  # method option among: ["country_shape", "gadm_shape", ...]
 # TODO: expand to include network_1 and network_2; example: create voronoi polygons and compare them or alike,
 # or "find_closest" to compare the closest nodes
+
+
 
 # file_ids of default gdrive data
 file_ids = {
@@ -70,12 +66,7 @@ pypsa_earth_network_files = ["data/pypsa-earth/networks/elec_s_110.nc",
                              "data/pypsa-earth/resources/shapes/gadm_shapes.geojson",
                              "data/pypsa-earth/resources/shapes/country_shapes.geojson"
                              ]
-#files_to_download = [gadm_shape, country_shape] + pypsa_earth_network_files + pypsa_eur_network_files
-
-
-path_network_1 = "./data/pypsa-eur/networks/elec_s_1024.nc"
-path_network_2 = "./data/pypsa-earth/networks/elec_s_110.nc"
-files_to_download = [path_network_1, path_network_2, gadm_shape, country_shape]
+files_to_download = [gadm_shape, country_shape] + pypsa_earth_network_files + pypsa_eur_network_files
 
 
 # utility function for gdrive
@@ -86,13 +77,11 @@ def download_grive(file_id, dest_path, showsize=False):
         showsize=showsize,
         unzip=False,
     )
-    print("dest_path")
-    print(dest_path)
+
 
 for fpath in files_to_download:
     pl_path = Path(fpath)
-    
-    print(pl_path)
+
 
     # skip if file exists
     if pl_path.is_file():
@@ -110,11 +99,12 @@ for fpath in files_to_download:
         print(f"File '{fpath}' not found")
         raise FileNotFoundError(fpath)
 
+eur_file = "data/pypsa-eur/networks/base.nc"
+earth_file = "data/pypsa-earth/networks/base.nc"
 
-#n1 = pypsa.Network(path_network_1)
-#n2 = pypsa.Network(path_network_2)
-#experiments.run_experiment_for_pair(eur_file, earth_file)
-#for pypsa_eur_filepath in pypsa_eur_network_files:
+n1 = pypsa.Network(eur_file)
+n2 = pypsa.Network(earth_file)
+experiments.run_experiment_for_pair(eur_file, earth_file, comparison_methodology)
     
 
 

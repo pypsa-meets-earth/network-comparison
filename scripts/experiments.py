@@ -1,51 +1,31 @@
 from pathlib import Path
+import os
 import pypsa
 import pandas as pd
 import geopandas as gpd
 import networkx as nx
 from pypsa.clustering.spatial import get_clustering_from_busmap
 import numpy as np
-
-gadm_shape = "data/pypsa-earth/resources/shapes/gadm_shapes.geojson"
-country_shape = "data/pypsa-earth/resources/shapes/country_shapes.geojson"
-
-comparison_methodology = {
-    "method": "shape",
-    "options": {
-        "path": "data/pypsa-earth/resources/shapes/country_shapes.geojson"
-    }
-}  # method option among: ["country_shape", "gadm_shape", ...]
-# TODO: expand to include network_1 and network_2; example: create voronoi polygons and compare them or alike,
-# or "find_closest" to compare the closest nodes
+import matplotlib.pyplot as plt
+# to handle the new version of PyPSA.
+try:
+    from pypsa.clustering.spatial import _make_consense
+except Exception:
+    # TODO: remove after new release and update minimum pypsa version
+    from pypsa.clustering.spatial import _make_consense
 
 # global crs parameters
 GEO_CRS = "EPSG:4326"
 METRIC_CRS = "EPSG:3857"
 
-aggregation_strategies = {
-    "generators": {  # use "min" for more conservative assumptions
-        "p_nom": "sum",
-        "p_nom_max": "sum",
-        "p_nom_min": "sum",
-        "p_min_pu": "mean",
-        "marginal_cost": "mean",
-        "committable": "any",
-        "ramp_limit_up": "max",
-        "ramp_limit_down": "max",
-        "efficiency": "mean",
-    }
-}
 
-
-def run_experiment_for_pair(path_network_1, path_network_2):
-    eur_filename = 'eur_'+Path(path_network_1).stem
-    earth_filename = 'earth_'+Path(path_network_2).stem
-
-    print(path_network_1)
-    print(path_network_2)
+def run_experiment_for_pair(path_network_1, path_network_2, comparison_methodology):
+    #make folder for output
+    output_folder_path = create_output_folder(path_network_1, path_network_2)    
+    
     # Load networks
-    n1 = pypsa.Network(path_network_1)  # first network
-    n2 = pypsa.Network(path_network_2)  # second network
+    n1 = pypsa.Network(path_network_1)
+    n2 = pypsa.Network(path_network_2)
     #Execute the mapping
     n1_mapped, n1_mapped_busmap = create_clustered_network(n1, comparison_methodology)
     n2_mapped, n2_mapped_busmap = create_clustered_network(n2, comparison_methodology)
@@ -66,6 +46,7 @@ def run_experiment_for_pair(path_network_1, path_network_2):
 
     #n1 PLOT
     n1.plot()
+    plt.savefig(output_folder_path+'/n1_plot.png')
     #n2 PLOT
     n2.plot()
 
@@ -115,7 +96,16 @@ def run_experiment_for_pair(path_network_1, path_network_2):
     print(graph_df)
 
 
-
+def create_output_folder(path_network_1, path_network_2):
+    parent_filepath = str(Path().resolve())
+    #get name of filepaths without extension
+    name_network_1 = str(Path(os.path.basename(path_network_1)).stem)
+    name_network_2 = str(Path(os.path.basename(path_network_2)).stem)
+    print(parent_filepath)
+    print(name_network_1)
+    results_dir = parent_filepath + '/output/' + name_network_1 + '_' + name_network_2
+    Path(results_dir).mkdir(parents=True, exist_ok=True)
+    return results_dir
 
 
 
@@ -128,8 +118,7 @@ def buses_to_geodf(df_buses, INPUT_CRS=GEO_CRS, OUTPUT_CRS=METRIC_CRS):
         crs=INPUT_CRS,
     ).to_crs(OUTPUT_CRS)
 
-#Create mapping of the networks for comparison purposes¶
-#Utility functions for mapping
+#Create mapping of the networks for comparison purposes
 def shape_mapping(n, options):
     """Create mapping by shape"""
     gdf = gpd.read_file(options["path"])
@@ -144,7 +133,8 @@ def shape_mapping(n, options):
     df_mapped = n.buses.groupby("country").apply(
         lambda x: gpd.sjoin_nearest(buses_to_geodf(x), gdf[gdf.country==x.name].to_crs(METRIC_CRS), how="inner")
     ).droplevel(0, axis=0)
-    return (df_mapped["index_right"] + " " + df_mapped.carrier).rename("mapping")
+    #return (df_mapped["index_right"] + " " + df_mapped.carrier).rename("mapping")
+    return (df_mapped.carrier).rename("mapping")
 
 
 def create_bus_mapping(n, method):
@@ -157,21 +147,26 @@ def create_bus_mapping(n, method):
 
 
 
-def get_aggregation_strategies(aggregation_strategies):
+def get_aggregation_strategies():
+    aggregation_strategies = {
+        "generators": {  # use "min" for more conservative assumptions
+            "p_nom": "sum",
+            "p_nom_max": "sum",
+            "p_nom_min": "sum",
+            "p_min_pu": "mean",
+            "marginal_cost": "mean",
+            "committable": "any",
+            "ramp_limit_up": "max",
+            "ramp_limit_down": "max",
+            "efficiency": "mean",
+        }
+    }
     """
     Default aggregation strategies that cannot be defined in .yaml format must
     be specified within the function, otherwise (when defaults are passed in
     the function's definition) they get lost when custom values are specified
     in the config.
     """
-    import numpy as np
-
-    # to handle the new version of PyPSA.
-    try:
-        from pypsa.clustering.spatial import _make_consense
-    except Exception:
-        # TODO: remove after new release and update minimum pypsa version
-        from pypsa.clustering.spatial import _make_consense
 
     bus_strategies = dict(country=_make_consense("Bus", "country"))
     bus_strategies.update(aggregation_strategies.get("buses", {}))
@@ -181,11 +176,11 @@ def get_aggregation_strategies(aggregation_strategies):
 
     return bus_strategies, generator_strategies
 
-# Bus aggregation strategies
 
-def create_clustering(n, busmap, aggregation_strategies=aggregation_strategies):
+
+def create_clustering(n, busmap):
     # get aggregation strategies
-    bus_strategies, generator_strategies = get_aggregation_strategies(aggregation_strategies)
+    bus_strategies, generator_strategies = get_aggregation_strategies()
 
     # get clustering
     clustering = get_clustering_from_busmap(
